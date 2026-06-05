@@ -1,23 +1,3 @@
-#!/usr/bin/env python3
-"""
-Análise estatística epidemiológica — Zika BR (SINAN 2018–2026)
-==============================================================
-Executa as cinco análises previstas no projeto:
-
-    1. Sazonalidade        — decomposição STL da série semanal nacional.
-    2. Tendência por UF    — regressão linear sobre os anos.
-    3. Previsão            — Facebook Prophet, horizonte de 52 semanas.
-    4. Clustering          — K-Means de municípios por perfil epidemiológico.
-    5. Pirâmide etária     — gráfico complementar.
-
-As saídas (PNG + CSV) são gravadas em --out-dir.
-
-Uso:
-    python analise_estatistica.py --dsn postgres://... --out-dir output/
-
-Dependências: pandas, numpy, matplotlib, seaborn, statsmodels,
-              scikit-learn, prophet, psycopg[binary]
-"""
 from __future__ import annotations
 
 import argparse
