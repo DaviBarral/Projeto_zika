@@ -1,24 +1,3 @@
-#!/usr/bin/env python3
-"""
-ETL — Zika BR (SINAN 2018–2026)
-================================
-Carrega o CSV unificado em PostgreSQL respeitando o esquema relacional definido em
-sql/01_schema.sql.
-
-Fluxo:
-    1. Lê o CSV em chunks (pandas) — robusto para 236 mil linhas.
-    2. Faz COPY em massa para `zika.stg_zika_raw` (TEXT puro).
-    3. Popula dim_municipio e dim_unidade_saude a partir dos códigos vistos.
-    4. Transforma e migra de stg_zika_raw → fato_notificacao usando SQL,
-       aproveitando as funções já criadas (fn_decodifica_idade etc.).
-    5. Atualiza a materialized view e roda VACUUM ANALYZE.
-
-Uso:
-    python etl_load.py --csv /caminho/ZIKA_BR_2018_2026_UNIFICADO.csv
-                       --dsn  postgresql://user:senha@localhost:5432/zika
-
-Dependências: psycopg[binary]>=3.1, pandas, tqdm
-"""
 from __future__ import annotations
 
 import argparse
@@ -42,9 +21,7 @@ logging.basicConfig(
 )
 log = logging.getLogger("etl")
 
-# ---------------------------------------------------------------------------
 # Colunas esperadas no CSV (ordem fixa)
-# ---------------------------------------------------------------------------
 CSV_COLUNAS = [
     "arquivo_origem", "ano_arquivo", "TP_NOT", "ID_AGRAVO", "CS_SUSPEIT",
     "DT_NOTIFIC", "SEM_NOT", "NU_ANO", "SG_UF_NOT", "ID_MUNICIP", "ID_REGIONA",
@@ -62,9 +39,7 @@ STG_COLUNAS = [c.lower() for c in CSV_COLUNAS]
 CHUNK_SIZE = 50_000   # linhas por chunk para o COPY
 
 
-# ===========================================================================
 # Helpers
-# ===========================================================================
 
 @contextmanager
 def conexao(dsn: str):
@@ -86,9 +61,7 @@ def executar_arquivo(conn: psycopg.Connection, caminho: Path) -> None:
         cur.execute(f.read())
 
 
-# ===========================================================================
 # 1. Cria estrutura e popula dimensões
-# ===========================================================================
 
 def criar_estrutura(conn: psycopg.Connection, sql_dir: Path) -> None:
     for nome in ("01_schema.sql",
@@ -100,9 +73,7 @@ def criar_estrutura(conn: psycopg.Connection, sql_dir: Path) -> None:
     log.info("Estrutura criada com sucesso.")
 
 
-# ===========================================================================
 # 2. Carga da staging via COPY
-# ===========================================================================
 
 def carregar_staging(conn: psycopg.Connection, csv_path: Path) -> int:
     """Lê o CSV em chunks e faz COPY em zika.stg_zika_raw. Retorna n linhas."""
@@ -249,9 +220,7 @@ def popular_unidades(conn: psycopg.Connection) -> None:
     log.info("dim_unidade_saude populada: %s registros.", f"{count:,}")
 
 
-# ===========================================================================
 # 4. Transforma staging → fato_notificacao
-# ===========================================================================
 
 SQL_INSERIR_FATO = """
 INSERT INTO zika.fato_notificacao (
@@ -449,10 +418,6 @@ def diagnostico(conn: psycopg.Connection) -> None:
     except Exception as e:
         log.warning(f"Não foi possível obter diagnóstico: {e}")
 
-
-# ===========================================================================
-# Main
-# ===========================================================================
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="ETL — Zika BR (SINAN 2018–2026)")
